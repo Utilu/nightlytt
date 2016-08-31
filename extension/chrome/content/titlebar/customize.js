@@ -83,6 +83,7 @@ init: function(aEvent)
 
   paneTitle.bundle=document.getElementById("variablesBundle");
 
+  paneTitle.addVariable("TitleVersion");
   paneTitle.addVariable("DefaultTitle");
   paneTitle.addVariable("TabTitle");
   paneTitle.addVariable("AppID");
@@ -91,13 +92,14 @@ init: function(aEvent)
   paneTitle.addVariable("Name");
   paneTitle.addVariable("Version");
   paneTitle.addVariable("VersionPretty");
+  paneTitle.addVariable("DisplayVersion");
   paneTitle.addVariable("Channel");
   paneTitle.addVariable("ChannelPretty");
+  paneTitle.addVariable("BetaRevision");
   paneTitle.addVariable("VersionChannel");
-  paneTitle.addVariable("AppBuildID");
-  paneTitle.addVariable("PlatformBuildID");
   paneTitle.addVariable("PlatformVersion");
-  paneTitle.addVariable("GeckoVersion");
+  paneTitle.addVariable("PlatformBuildID");
+  paneTitle.addVariable("AppBuildID");
   paneTitle.addVariable("Changeset");
   paneTitle.addVariable("UserAgent");
   paneTitle.addVariable("Locale");

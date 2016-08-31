@@ -15,21 +15,36 @@ variables: {
     return this._appInfo;
   },
 
+  get titleversion() { return this.tabtitle + ' - ' + this.vendor + ' ' + this.name + ' ' + this.versionchannel + ' (' + this.appbuildid + ')'; },
+  get defaulttitle() { return nightlyApp.defaultTitle; },
+  get tabtitle() { return nightlyApp.tabTitle; },
   get appid() this.appInfo.ID,
-  get vendor() { return nightly.verifyVendor(this.appInfo.vendor); },
+  brandname: null,
+  get vendor() {
+    // Fix for vendor not being set in Mozilla Thunderbird
+    return this.appInfo.name == "Thunderbird" && this.appInfo.vendor == "" ? "Mozilla" : this.appInfo.vendor;
+  },
   get name() this.appInfo.name,
   get version() this.appInfo.version,
-  get versionpretty() { return nightly.makeVersionPretty(this.appInfo.version); },
+  get versionpretty() { return nightly.makeVersionPretty(this.version); },
+  get displayversion() {
+    var ver = this.version;
+    try {
+      // The import is only required in Mozilla Thunderbird
+      Components.utils.import("resource://gre/modules/AppConstants.jsm");
+      if (AppConstants.MOZ_APP_VERSION_DISPLAY) { ver = AppConstants.MOZ_APP_VERSION_DISPLAY; }
+    }
+    catch (e) {}
+    return ver;
+  },
   get channel() { return nightly.updateChannel(); },
   get channelpretty() { return nightly.updateChannelPretty(); },
-  get versionchannel() { return nightly.versionAndChannel(this.appInfo.version); },
-  get appbuildid() this.appInfo.appBuildID,
-  get platformbuildid() this.appInfo.platformBuildID,
+  get betarevision() { return nightly.betaRevision(this.version, this.displayversion); },
+  get versionchannel() { return nightly.versionAndChannel(this.version, this.displayversion); },
   get platformversion() this.appInfo.platformVersion,
-  get geckobuildid() this.appInfo.platformBuildID,
-  get geckoversion() this.appInfo.platformVersion,
+  get platformbuildid() this.appInfo.platformBuildID,
+  get appbuildid() this.appInfo.appBuildID,
   get changeset() { return nightly.getChangeset(); },
-  brandname: null,
   get useragent() navigator.userAgent,
   get locale() {
     var registry = Components.classes["@mozilla.org/chrome/chrome-registry;1"]
@@ -39,11 +54,9 @@ variables: {
   get os() this.appInfo.OS,
   get processor() this.appInfo.XPCOMABI.split("-")[0],
   get compiler() this.appInfo.XPCOMABI.split(/-(.*)$/)[1],
-  get defaulttitle() { return nightlyApp.defaultTitle; },
-  get tabscount() { return nightlyApp.tabsCount; },
-  get tabtitle() { return nightlyApp.tabTitle; },
-  profile: null,
   toolkit: "cairo",
+  profile: null,
+  get tabscount() { return nightlyApp.tabsCount; },
   flags: ""
 },
 
@@ -60,18 +73,6 @@ getString: function(name, format) {
 },
 
 preferences: null,
-
-isTrunk: function() {
-  let isNightlyRepo = false;
-
-  for each (var repo in nightlyApp.repository) {
-    isNightlyRepo = isNightlyRepo || nightly.getRepo().indexOf(repo) != -1;
-  }
-
-  return isNightlyRepo
-    && (nightly.variables.platformversion.indexOf("pre") != -1 ||
-        nightly.variables.platformversion.indexOf(".0a") != -1);
-},
 
 /**
  *  A helper function for nsIPromptService.confirmEx().
@@ -135,7 +136,7 @@ init: function() {
 
   var changeset = nightly.getChangeset();
   var currChangeset = nightly.preferences.getCharPref("currChangeset");
-  if (nightly.isTrunk() && (!currChangeset || changeset != currChangeset)) {
+  if (!currChangeset || changeset != currChangeset) {
     // keep track of previous nightly's changeset for pushlog
     nightly.preferences.setCharPref("prevChangeset", currChangeset);
     nightly.preferences.setCharPref("currChangeset", changeset);
@@ -256,10 +257,6 @@ parseHTML: function(url, callback) {
   frame.contentDocument.location.href = url;
 },
 
-verifyVendor: function(vendor) {
-  if (vendor == '') { vendor = 'Mozilla'; } // Mozilla Thunderbird
-  return vendor;
-},
 makeVersionPretty: function(ver) {
   ver = ver.replace('0a2','0.0.0');
   ver = ver.replace('0a1','0.0.0');
@@ -281,10 +278,17 @@ updateChannelPretty: function() {
   else channel = '';
   return channel;
 },
-versionAndChannel: function(ver) {
-  var ver = nightly.makeVersionPretty(ver);
+betaRevision: function(ver, displayversion) {
+  var beta = displayversion.replace(ver + 'b','');
+  if (beta == displayversion) { beta = ''; };
+  return beta;
+},
+versionAndChannel: function(ver, displayversion) {
   var channel = nightly.updateChannelPretty();
+  var beta = nightly.betaRevision(ver, displayversion);
   if (channel == 'Release' || channel == 'Default') { channel = ''; }
+  if (channel == 'beta' && beta != '') { channel += ' ' + beta; }
+  ver = nightly.makeVersionPretty(ver);
   if (channel != '') { ver += ' ' + channel; }
   return ver;
 },
@@ -313,10 +317,8 @@ menuPopup: function(event, menupopup) {
         node.hidden = !attext;
       if (node.id.indexOf("-copy") != -1)
         node.hidden = attext;
-      if (node.id == 'nightly-pushlog-lasttocurrent') {
-        node.hidden = !nightly.isTrunk();
+      if (node.id == 'nightly-pushlog-lasttocurrent')
         node.disabled = !nightly.preferences.getCharPref("prevChangeset");
-      }
       if (node.id == 'nightly-crashme')
         node.hidden = !ctypes.libraryName;
       if (node.id == 'nightly-compatibility')
@@ -382,7 +384,7 @@ getExtensionList: function(callback) {
           + (addon.userDisabled || addon.appDisabled ? " [DISABLED]" : "");
       });
       strings.sort(nightly.insensitiveSort);
-      callback(strings.join(" \n"));
+      callback(strings);
     });
   } catch(e) {
     // old extension manager API - take out after Firefox 3.6 support dropped
@@ -416,7 +418,7 @@ getExtensionList: function(callback) {
       catch (e) { }
     }
     text.sort(nightly.insensitiveSort);
-    callback(text.join(" \n"));
+    callback(text);
   }
 },
 
@@ -428,7 +430,7 @@ insertExtensions: function() {
       nightly.getExtensionList(function(text) {
         var newpos = element.selectionStart + text.length;
         var value = element.value;
-        element.value = value.substring(0, element.selectionStart) + text +
+        element.value = value.substring(0, element.selectionStart) + text.join(", ") +
                         value.substring(element.selectionEnd);
         element.selectionStart = newpos;
         element.selectionEnd = newpos;
@@ -442,7 +444,7 @@ insertExtensions: function() {
 copyExtensions: function() {
   nightly.getExtensionList(function(text) {
     if (text)
-      nightly.copyText(text);
+      nightly.copyText(text.join(", "));
   });
 },
 
