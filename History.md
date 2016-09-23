@@ -1,12 +1,19 @@
 # Utilu Nightly Tester Tools
 
+3.7.1.3 / 2016-09-23
+====================
+
+ * Improved Customize Title bar Variable Application Update Channel
+ * Updated maxVersions for applications
+ * Minor changes and improvements
+
 3.7.1.2 / 2016-08-31
 ====================
 
  * Optimized the order of the Customize Title bar Variables
  * Added Customize Title bar Variable Application Title and Version
  * Added Customize Title bar Variable Application Display Version
- * Added Customize Title bar Variable Application Beta Revision (only filled when applicable)
+ * Added Customize Title bar Variable Application Beta Version (only filled when applicable)
  * Removed Gecko Build Identifier, since it used PlatformBuildID, just like XUL Platform Build Identifier
  * Removed Gecko Version, since it used PlatformVersion, just like XUL Platform Version
  * Removed unused image file
