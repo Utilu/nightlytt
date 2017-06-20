@@ -1,5 +1,14 @@
 # Utilu Nightly Tester Tools
 
+3.7.1.4 / 2017-06-20
+====================
+
+ * Reverted default extension separator from comma to new line, except for input fields because they don't support newlines
+ * Added a hidden preference nightly.extensionSeparator to optionally customize the extension separator
+ * Marked extension as multi-process compatible
+ * Updated maxVersions for applications
+ * Minor changes and improvements
+
 3.7.1.3 / 2016-09-23
 ====================
 

@@ -426,10 +426,15 @@ insertExtensions: function() {
   if (element) {
     var type = element.localName.toLowerCase();
     if ((type == "input") || (type == "textarea")) {
+      // Input fields don't support new lines, so fallback to a comma separated list
+      var extensionSeparator = (type == "input") ? ", " : "\n";
+      if (nightly.preferences.prefHasUserValue("extensionSeparator")) {
+        extensionSeparator = nightly.preferences.getCharPref("extensionSeparator");
+      }
       nightly.getExtensionList(function(text) {
         var newpos = element.selectionStart + text.length;
         var value = element.value;
-        element.value = value.substring(0, element.selectionStart) + text.join(", ") +
+        element.value = value.substring(0, element.selectionStart) + text.join(extensionSeparator) +
                         value.substring(element.selectionEnd);
         element.selectionStart = newpos;
         element.selectionEnd = newpos;
@@ -441,9 +446,13 @@ insertExtensions: function() {
 },
 
 copyExtensions: function() {
+  var extensionSeparator = "\n";
+  if (nightly.preferences.prefHasUserValue("extensionSeparator")) {
+    extensionSeparator = nightly.preferences.getCharPref("extensionSeparator");
+  }
   nightly.getExtensionList(function(text) {
     if (text)
-      nightly.copyText(text.join(", "));
+      nightly.copyText(text.join(extensionSeparator));
   });
 },
 
